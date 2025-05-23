@@ -1,89 +1,76 @@
-﻿using BlogAPI.Entities.Models;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using BlogAPI.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogAPI.Data;
 
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+public class ApplicationDbContext : DbContext
 {
-    // DbSets represent the collections of the specified entities in the database
-    public DbSet<BlogPost> BlogPosts { get; set; }
-    public DbSet<Comment> Comments { get; set; }
-    public DbSet<Like> Likes { get; set; }
-
-    // Constructor to pass DbContextOptions to the base class
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
     }
 
-    // Configures the schema needed for the Identity framework and other entities
-    protected override void OnModelCreating(ModelBuilder builder)
+    public DbSet<User> Users { get; set; }
+    public DbSet<Post> Posts { get; set; }
+    public DbSet<Category> Categories { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Ensures that the base class configurations are applied
-        base.OnModelCreating(builder);
+        base.OnModelCreating(modelBuilder);
 
-        // Configures ApplicationUser entity
-        builder.Entity<ApplicationUser>()
-            .HasIndex(u => u.UserName)  // Ensures UserName is unique
-            .IsUnique();
-
-        builder.Entity<ApplicationUser>()
-            .HasIndex(u => u.Email)  // Ensures Email is unique
-            .IsUnique();
-
-        // Configures BlogPost entity
-        builder.Entity<BlogPost>(entity =>
+        // Contrução da entidade User
+        modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id);  // Primary key
-            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);  // Title is required and has a max length of 200
-            entity.Property(e => e.Content).IsRequired();  // Content is required
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");  // Default value for CreatedAt is the current date
-            entity.HasOne(e => e.User)
-                .WithMany(u => u.BlogPosts)
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Restrict);  // Restrict delete behavior
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Username).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.PasswordHash).IsRequired();
+            entity.Property(e => e.Role).IsRequired();
+            entity.Property(e => e.CreatedAt);
+
+            // Garante que o 'Email' e o 'Username' sejam únicos
+            entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => e.Username).IsUnique();
         });
 
-        // Configures Comment entity
-        builder.Entity<Comment>(entity =>
+        // Contrução da entidade Post
+        modelBuilder.Entity<Post>(entity =>
         {
-            entity.HasKey(e => e.Id);  // Primary key
-            entity.Property(e => e.Content).IsRequired();  // Content is required
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");  // Default value for CreatedAt is the current date
-            entity.HasOne(e => e.User)
-                .WithMany(u => u.Comments)
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Restrict);  // Restrict delete behavior
-            entity.HasOne(e => e.BlogPost)
-                .WithMany(p => p.Comments)
-                .HasForeignKey(e => e.BlogPostId)
-                .OnDelete(DeleteBehavior.Restrict);  // Restrict delete behavior
-            entity.HasOne(e => e.ParentComment)
-                .WithMany(c => c.Replies)
-                .HasForeignKey(e => e.ParentCommentId)
-                .OnDelete(DeleteBehavior.Restrict);  // Restrict delete behavior
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Content).IsRequired();
+            entity.Property(e => e.CreatedAt);
+            entity.Property(e => e.UpdatedAt);
+
+            // Relacionamento da entidade 'Post' como a entidade 'User'
+            entity.HasOne(p => p.User)
+                .WithMany(u => u.Posts)
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(p => p.Category)
+                .WithMany(c => c.Posts)
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
-        // Configures Like entity
-        builder.Entity<Like>(entity =>
+        // Contrução da entidade Category
+        modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id);  // Primary key
-            entity.HasOne(e => e.User)
-                .WithMany(u => u.Likes)
-                .HasForeignKey(e => e.UserId)
-                .OnDelete(DeleteBehavior.Restrict);  // Restrict delete behavior
-            entity.HasOne(e => e.BlogPost)
-                .WithMany(p => p.Likes)
-                .HasForeignKey(e => e.BlogPostId)
-                .OnDelete(DeleteBehavior.Restrict);  // Restrict delete behavior
-            entity.HasOne(e => e.Comment)
-                .WithMany(c => c.Likes)
-                .HasForeignKey(e => e.CommentId)
-                .OnDelete(DeleteBehavior.Restrict);  // Restrict delete behavior
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
 
-            // Ensure unique likes
-            entity.HasIndex(e => new { e.UserId, e.BlogPostId }).IsUnique();  // Unique constraint on UserId and BlogPostId
-            entity.HasIndex(e => new { e.UserId, e.CommentId }).IsUnique();  // Unique constraint on UserId and CommentId
+            // Garante que hajam nomes de categorias únicos
+            entity.HasIndex(e => e.Name).IsUnique();
         });
+
+        // Cadastrando as categorias iniciais
+        modelBuilder.Entity<Category>().HasData(
+            new Category { Id = 1, Name = "Culinária", Description = "Descubra receitas, dicas de preparo e curiosidades gastronômicas do mundo todo." },
+            new Category { Id = 2, Name = "Tecnologia", Description = "Fique por dentro das inovações, tendências e novidades do mundo digital." },
+            new Category { Id = 3, Name = "Ciência", Description = "Explore o universo do conhecimento científico com conteúdos acessíveis e informativos." },
+            new Category { Id = 4, Name = "Universo", Description = "Desvende os mistérios do cosmos! Um espaço dedicado à astronomia e às maravilhas do espaço sideral." },
+            new Category { Id = 5, Name = "Design", Description = "Ideal para quem busca inspiração, aprimoramento técnico ou simplesmente aprecia boas composições visuais." }
+        );
     }
 }

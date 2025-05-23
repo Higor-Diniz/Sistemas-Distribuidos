@@ -1,66 +1,77 @@
-﻿# BlogAPI Project
+﻿# Projeto BlogAPI - Sistemas Distrbuídos
 
-## Introduction
+## Introdução
 
-Welcome to the BlogAPI project! This project is a simple yet robust blog API built with .NET 8, Entity Framework Core, and ASP.NET Core Identity.
-The API allows users to register, login, create blog posts, comment on blog posts and other comments, and like blog posts and comments.
-This project demonstrates a clean architecture and best practices in building a RESTful API.
+Seja muito bem-vindo(a) ao projeto de API Blog. O presente projeto foca em uma solução backend de uma API simples, mas completa, utilizando ferramentas como .NET 8, Entity Framework Core, ASP.NET Core e JwtBearer.
+A API permite que os usuários possam registrar uma conta, fazer login, e criar Post em determinadas categorias 'pré geradas' pelo sistema.
 
-## Features
+## Funções do Sistema
 
-- User registration and authentication using ASP.NET Core Identity
-- CRUD operations for blog posts
-- Nested comments on blog posts and other comments
-- Like functionality for blog posts and comments with unique constraints
-- Role-based authorization for managing blog content
+- Registrar e Autenticar usuários;
+- Visualizar as categorias dentro do sistema;
+- Realizar operação de CRUD (Create, Read, Update and Delete) de postagens;
+- Controle de autorização ao criar postagens acerca do usuário que criou.
 
-## Technologies
+## Tecnologias Utilizadas
 
-- **ASP.NET Core:** ASP.NET Core is a cross-platform framework for building modern, cloud-based, and internet-connected applications.
+- **ASP.NET Core:** O ASP.NET Core é uma ferramenta multiplataforma bastante utilizada na construção de aplicações moderna e conectada à internet.
 
-- **Entity Framework:** Entity Framework (EF) is an ORM for .NET that simplifies data access by allowing developers to work with database objects using .NET objects.
+- **Entity Framework:** Entity Framework (EF) is an ORM (Object-Relational Mapping) para .NET o qual simplifica o acesso e mapeamento de dados com objeto de banco de dados.
 
 - **Identity Framework:** ASP.NET Core Identity is a membership system that supports user authentication, authorization, and management.
 
-- **MsSQL:** Microsoft SQL Server (MsSQL) is a relational database management system that provides high performance, security, and data integrity.
+- **MySQL:** O MySQL é um sistema de gerenciamento de banco de dados (SGBD) o qual utiliza a linguagem SQL, sendo um dos SGBDs mais populares atualmente.
 
-- **Swagger:** Swagger is a tool for designing, building, and documenting RESTful APIs with a user-friendly interface for testing endpoints.
+- **Swagger:** Swagger é uma ferramenta utilizada para visualizar, construir e documentar APIs RESTful, possindo uma interface amigável para testar e implementar em sistemas.
 
-## Project Structure
+- **AutoMappper:** Uma biblioteca que realiza o mapeamento de propriedades de um objeto para outro, assim, evitando possíveis erros de mapeamentos.
+
+## Arquitetura do Projeto
 
 ```maths
-    BlogAPI-SoftITO/
+    BlogAPI/
     ├── Controllers/
     ├── Data/
+    │── DTOs/
+    │ ├── Auth/
+    │ ├── Categories/
+    │ ├── Posts/
     ├── Entities/
-    │ ├── Models/
-    │ ├── DTOs/
+    │── Mapping/
     ├── Migrations/
     ├── Properties/
+    ├── Services/
+    │ ├── Interfaces/
 ```
 
-- **Controllers:** Contains the API controllers for handling HTTP requests.
-- **DTOs:** Data Transfer Objects for transferring data between client and server.
-- **Models:** Entity models representing the database schema.
-- **Data:** Database context and configuration for Entity Framework Core.
+- **Controllers:** Contém os controladores responsáveis por receber requisições HTTP, tratar rotas e delegar ações às camadas de serviço;
+- **Data:** Contém a classe de contexto (DbContext) que gerencia a conexão com o banco de dados e configura as entidades;
+- **DTOs:** Define os Data Transfer Objects, usados para enviar e receber dados da API. Subpastas indicam organização por funcionalidade;
+- **Entities:** Contém as entidades de domínio, ou seja, as classes que representam as tabelas do banco;
+- **Mapping:** Define as configurações específicas de mapeamento entre entidades e banco (via Fluent API do EF Core);
+- **Migrations:** Contém os arquivos de migração gerados pelo Entity Framework, usados para criar/alterar o esquema do banco de dados;
+- **Properties:** Contém arquivos de configuração do projeto, como launchSettings.json, usado para definir como a aplicação roda localmente;
+- **Services:** Implementa a lógica de negócio. Os controladores chamam os serviços para executar as ações.
 
 ## Getting Started
 
 ### Prerequisites
 
 - .NET 8 SDK
-- MsSQL Server (or any other compatible database)
-- Visual Studio or VS Code
+- MySQL Server e MySQL Workbrench - 8.0.42
+- Visual Studio (2022) ou VS Code
+- EntityFrameworkCore - 8.0.1
+- ASP.NET CORE - 8.0.1
 
-### Installation
+### Instalação
 
-1. Clone the repository:
+1. Clone o repositório:
 
    ```bash
-   git clone https://github.com/denizciMert/BlogAPI.git
+   git clone https://github.com/higor-diniz/BlogAPI.git
    ```
 
-2. Set up the database connection string in appsettings.json:
+2. Configure a string de conexão do banco de dados em appsettings.json:
 
    ```json
    {
@@ -72,12 +83,12 @@ This project demonstrates a clean architecture and best practices in building a 
      },
      "AllowedHosts": "*",
      "ConnectionStrings": {
-       "ApplicationDbContext": "YourConnectionString"
+       "ApplicationDbContext": "InsiraSuaStringDeConexaoAqui"
      }
    }
    ```
 
-3. Build and run the project:
+3. Realize os comandos abaixo para Buildar e Rodar o projeto:
 
    ```bash
    dotnet build
@@ -89,138 +100,88 @@ This project demonstrates a clean architecture and best practices in building a 
 
 ## API Endpoints
 
-### Account Management
+### Usuários
 
 <table>
 <thead>
 <tr>
-<th>Method</th>
+<th>Método</th>
 <th>Endpoint</th>
-<th>Description</th>
+<th>Descrição</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>POST</td>
-<td>/api/account/register</td>
-<td>Register a new user</td>
+<td>/api/v1/auth/register</td>
+<td>Registra um novo usuário</td>
 </tr>
 <tr>
 <td>POST</td>
-<td>/api/account/login</td>
-<td>Login a user</td>
-</tr>
-<tr>
-<td>POST</td>
-<td>/api/account/logout</td>
-<td>Logout the current user</td>
+<td>/api/v1/auth/login</td>
+<td>Realiza o login do usuário</td>
 </tr>
 </tbody>
 </table>
 
-### Blog Posts
+### Categorias
 
 <table>
 <thead>
 <tr>
-<th>Method</th>
+<th>Método</th>
 <th>Endpoint</th>
-<th>Description</th>
+<th>Descrição</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>GET</td>
-<td>/api/blogpost</td>
-<td>Get all blog posts</td>
+<td>/api/v1/categories</td>
+<td>Obtém todas as categorias</td>
+</tr>
+</tbody>
+</table>
+
+### Posts
+
+<table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Endpoint</th>
+<th>Descrição</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td>/api/v1/posts</td>
+<td>Cadastra um novo Post</td>
 </tr>
 <tr>
 <td>GET</td>
-<td>/api/blogpost/{id}</td>
-<td>Get a single blog post by ID</td>
+<td>/api/v1/posts</td>
+<td>Obtém todos os Posts</td>
 </tr>
 <tr>
-<td>POST</td>
-<td>/api/blogpost</td>
-<td>Create a new blog post (authorized users only)</td>
+<td>GET</td>
+<td>/api/v1/posts/{id}</td>
+<td>Obtém um Post pelo 'id'</td>
 </tr>
 <tr>
 <td>PUT</td>
-<td>/api/blogpost/{id}</td>
-<td>Update a blog post (authorized users only)</td>
+<td>/api/v1/posts/{id}</td>
+<td>Altera um Post</td>
 </tr>
 <tr>
 <td>DELETE</td>
-<td>/api/blogpost/{id}</td>
-<td>Soft delete a blog post (authorized users only)</td>
+<td>/api/v1/posts/{id}</td>
+<td>Deleta um Post</td>
 </tr>
 </tbody>
 </table>
 
-### Comments
+## Agradecimentos
 
-<table>
-<thead>
-<tr>
-<th>Method</th>
-<th>Endpoint</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>GET</td>
-<td>/api/comments</td>
-<td>Get all comments</td>
-</tr>
-<tr>
-<td>GET</td>
-<td>/api/comments/{id}</td>
-<td>Get a single comment by ID</td>
-</tr>
-<tr>
-<td>POST</td>
-<td>/api/comments</td>
-<td>Create a new comment (authorized users only)</td>
-</tr>
-<tr>
-<td>PUT</td>
-<td>/api/comments/{id}</td>
-<td>Update a comment (authorized users only)</td>
-</tr>
-<tr>
-<td>DELETE</td>
-<td>/api/comments/{id}</td>
-<td>Soft delete a comment (authorized users only)</td>
-</tr>
-</tbody>
-</table>
-
-### Likes
-
-<table>
-<thead>
-<tr>
-<th>Method</th>
-<th>Endpoint</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>POST</td>
-<td>/api/likes</td>
-<td>Like a blog post or comment (authorized users only)</td>
-</tr>
-<tr>
-<td>DELETE</td>
-<td>/api/likes</td>
-<td>Unlike a blog post or comment (authorized users only)</td>
-</tr>
-</tbody>
-</table>
-
-## Acknowledgements
-
-- This project was developed as part of the backend program at <a href="https://softito.com.tr/index.php" rel="nofollow">Softito Yazılım - Bilişim Akademisi</a>.
-- Special thanks to the instructors and peers who provided valuable feedback and support throughout the development process.
+- Este projeto foi desenvolvido seguindo como base um projeto de Blog do <a href="https://github.com/denizciMert/BlogAPI" rel="nofollow">Mert Denizci - GitHub</a>.

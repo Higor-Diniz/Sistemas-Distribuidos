@@ -1,8 +1,12 @@
 using System.Text.Json.Serialization;
 using BlogAPI.Data;
-using BlogAPI.Entities.Models;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using BlogAPI.Services.Interfaces;
+using BlogAPI.Services;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace BlogAPI
 {
@@ -12,18 +16,9 @@ namespace BlogAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Register the DbContext with the connection string
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("ApplicationDbContext"),
-                    sqlServerOptions => sqlServerOptions.EnableRetryOnFailure()  // Enable retry on failure for SQL Server
-                ));
-
-            // Add Identity services to the container
-            builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-                .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddDefaultTokenProviders();
-
+            // Add services to the container
+            builder.Services.AddControllers();
+            
             // Configure JSON options to handle reference loops and ignore null values
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
@@ -34,27 +29,76 @@ namespace BlogAPI
             // Configure Swagger/OpenAPI
             // Learn more at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Blog API", Version = "v1" });
+                
+                // Configure JWT Authentication in Swagger
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
+
+            var connectionString = builder.Configuration.GetConnectionString("AppDbConnectionString");
+
+            builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseMySql
+            (connectionString, ServerVersion.AutoDetect(connectionString)));
+
+            // Add these lines in your service registration section
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IPostService, PostService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+            // Configure AutoMapper
+            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+            // Configure JWT Authentication
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                        ValidAudience = builder.Configuration["Jwt:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "your-super-secret-key-with-at-least-32-characters"))
+                    };
+                });
+
+            // Add logging
+            builder.Services.AddLogging(options =>
+            {
+                options.AddConsole();
+                options.AddDebug();
+            });
 
             var app = builder.Build();
 
-            // Migrate the database
-            using (var scope = app.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                try
-                {
-                    var context = services.GetRequiredService<ApplicationDbContext>(); // Get the DbContext
-                    await context.Database.MigrateAsync(); // Apply migrations
-                }
-                catch (Exception ex)
-                {
-                    var logger = services.GetRequiredService<ILogger<Program>>(); // Get the logger
-                    logger.LogError(ex, "An error occurred while migrating the database."); // Log the error
-                }
-            }
-
-            // Configure the HTTP request pipeline for development environment
+            // Configure the HTTP request pipeline
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -62,13 +106,13 @@ namespace BlogAPI
             }
 
             app.UseHttpsRedirection();
-
-            app.UseAuthentication();  // Enable authentication
-            app.UseAuthorization();  // Enable authorization
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.MapControllers();
-
-            await app.RunAsync();  // Run the application
+            
+            // Run the application
+            await app.RunAsync(); 
         }
     }
 }
