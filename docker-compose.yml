@@ -2,12 +2,13 @@ version: '3.8'
 
 services:
   api:
-    build: ./BlogAPI
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    working_dir: /src
+    volumes:
+      - ./BlogAPI:/src
     ports:
       - "5119:5119"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__AppDbConnectionString=Server=db;Database=database_blog;User=root;Password=Teste123
+    command: dotnet run --urls http://0.0.0.0:5119
     depends_on:
       - db
 
