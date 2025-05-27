@@ -35,28 +35,28 @@ namespace BlogAPI.Controllers
             return Ok(post);
         }
 
-        [Authorize]
+        // [Authorize]
         [HttpPost]
         public async Task<ActionResult<PostResponseDto>> CreatePost([FromBody] PostDto postDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var userId = int.Parse(User.FindFirst("uid")?.Value);
-            var result = await _postService.CreatePostAsync(postDto, userId);
+            // var userId = int.Parse(User.FindFirst("uid")?.Value);
+            var result = await _postService.CreatePostAsync(postDto, 1);
             
             return CreatedAtAction(nameof(GetPost), new { id = result.Id }, result);
         }
 
-        [Authorize]
+        // [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePost(int id, [FromBody] PostDto postDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var userId = int.Parse(User.FindFirst("uid")?.Value);
-            var result = await _postService.UpdatePostAsync(id, postDto, userId);
+            // var userId = int.Parse(User.FindFirst("uid")?.Value);
+            var result = await _postService.UpdatePostAsync(id, postDto, 1);
             
             if (!result.Success)
                 return result.Message == "Não encontrado!" ? NotFound() : Forbid();
@@ -64,12 +64,12 @@ namespace BlogAPI.Controllers
             return NoContent();
         }
 
-        [Authorize]
+        // [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePost(int id)
         {
-            var userId = int.Parse(User.FindFirst("uid")?.Value);
-            var result = await _postService.DeletePostAsync(id, userId);
+            // var userId = int.Parse(User.FindFirst("uid")?.Value);
+            var result = await _postService.DeletePostAsync(id, 1);
             
             if (!result.Success)
                 return result.Message == "Não encontrado!" ? NotFound() : Forbid();

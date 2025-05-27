@@ -27,7 +27,6 @@ namespace BlogAPI
             });
 
             // Configure Swagger/OpenAPI
-            // Learn more at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
@@ -73,27 +72,38 @@ namespace BlogAPI
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             // Configure JWT Authentication
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                        ValidAudience = builder.Configuration["Jwt:Audience"],
-                        IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "your-super-secret-key-with-at-least-32-characters"))
-                    };
-                });
-
+            // builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            //     .AddJwtBearer(options =>
+            //     {
+            //         options.TokenValidationParameters = new TokenValidationParameters
+            //         {
+            //             ValidateIssuer = true,
+            //             ValidateAudience = true,
+            //             ValidateLifetime = true,
+            //             ValidateIssuerSigningKey = true,
+            //             ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            //             ValidAudience = builder.Configuration["Jwt:Audience"],
+            //             IssuerSigningKey = new SymmetricSecurityKey(
+            //                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "your-super-secret-key-with-at-least-32-characters"))
+            //         };
+            //     });
+                        
             // Add logging
             builder.Services.AddLogging(options =>
             {
                 options.AddConsole();
                 options.AddDebug();
+            });
+
+            // Add CORS policy
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
             });
 
             var app = builder.Build();
@@ -106,11 +116,15 @@ namespace BlogAPI
             }
 
             app.UseHttpsRedirection();
-            app.UseAuthentication();
-            app.UseAuthorization();
+
+            // Use CORS policy
+            app.UseCors("AllowAll");
+
+            // app.UseAuthentication();
+            // app.UseAuthorization();
 
             app.MapControllers();
-            
+
             // Run the application
             await app.RunAsync(); 
         }
