@@ -1,12 +1,13 @@
-# Realizar o build da aplicação
+# Build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY . .
 RUN dotnet restore
 RUN dotnet publish -c Release -o /app/publish
 
-# Realizar o runtime da aplicação
+# Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/publish .
 EXPOSE 5119
+ENTRYPOINT ["dotnet", "BlogAPI.dll"]

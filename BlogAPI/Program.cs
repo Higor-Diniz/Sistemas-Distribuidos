@@ -106,6 +106,17 @@ namespace BlogAPI
                 });
             });
 
+            // Add CORS policy
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline
@@ -124,6 +135,7 @@ namespace BlogAPI
             app.UseAuthorization();
 
             app.MapControllers();
+
 
             // Run the application
             await app.RunAsync(); 
